@@ -1,0 +1,70 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-12T14:32:03.469Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 3,
+    "implemented": 3,
+    "items": [
+      {
+        "id": "REQ-4",
+        "summary": "Ensure the frontend is wired to the Motoko canister defined in backend/main.mo by using the generated canister interface for all calls (ensureInitialized, profile/goal/investment CRUD, linking, analytics, dashboard) and verifying the method signatures/types match main.mo.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useActorClient.ts",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/hooks/usePrefetchTabQueries.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useActorClient.ts"
+        ]
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Use the access-control initialization flow consistently for authenticated users: on login, create an identity-bound actor and call ensureInitialized() before enabling React Query requests/mutations, so callers receive the #user role automatically and unauthorized traps are avoided in normal usage.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useActorReadiness.ts",
+          "frontend/src/App.tsx",
+          "frontend/src/components/ConnectionErrorState.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useActorReadiness.ts",
+          "frontend/src/components/ConnectionErrorState.tsx"
+        ]
+      },
+      {
+        "id": "REQ-6",
+        "summary": "Make admin access-control secret initialization non-blocking and safe when missing: avoid failing actor creation/initialization when the URL parameter caffeineAdminToken is absent or empty, and standardize on the resilient behavior across actor-creation hooks used by the app.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useActorClient.ts",
+          "frontend/src/utils/urlParams.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useActorClient.ts",
+          "frontend/src/utils/urlParams.ts"
+        ]
+      }
+    ]
+  },
+  "changedFiles": [
+    "build-request.json",
+    "caffeine.lock.json",
+    "feature_evidence.json",
+    "frontend-file-summaries.txt",
+    "frontend-implementation-plan.json",
+    "frontend/src/components/ConnectionErrorState.tsx",
+    "frontend/src/hooks/useActorClient.ts",
+    "frontend/src/hooks/useActorReadiness.ts",
+    "frontend/src/utils/urlParams.ts",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}

@@ -1,0 +1,238 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 28,
+  "summary": "FinancePro is a full-stack (ICP canister + React) financial planning app that authenticates users via Internet Identity and lets them create/manage financial goals and investment entries, link investments to goals with allocated amounts, and view a combined dashboard with computed analytics (goal progress, category breakdowns, portfolio value, and P&L). The frontend is a Tailwind/shadcn-ui interface using React Query for data fetching/mutations and Recharts for interactive visualizations; the backend is a Motoko canister with role-based access control (admin/user/guest) and per-caller data isolation.",
+  "architectural_notes": [
+    "Backend is a Motoko Internet Computer canister exposing a Candid interface consumed by a generated TS actor in the frontend.",
+    "Role-based authorization is centralized in an AccessControl module and mixed into the actor via a MixinAuthorization pattern (include mixin).",
+    "Frontend uses @tanstack/react-query to wrap all canister calls (queries + mutations) and invalidate/refetch dependent caches on success and when the actor/identity changes.",
+    "Authentication is handled via a React context/provider around @dfinity/auth-client (Internet Identity), persisting delegation across reloads and exposing login/logout/status flags.",
+    "UI is built with Tailwind + shadcn-ui components, OKLCH CSS variables for theming, and next-themes for light/dark toggle.",
+    "Analytics visualization uses Recharts (bar/pie charts) with custom tooltips and summary cards derived from a single dashboard endpoint.",
+    "Frontend adds an actor-readiness layer (e.g., useActorReadiness/useActorClient) to gate React Query hooks and screen rendering until identity/actor initialization is complete, surfacing initialization failures via a dedicated ConnectionErrorState UI.",
+    "Frontend must be linked to the main.mo canister interface (Candid/actor) and follow the existing AccessControl initialization/authorization flow when creating the authenticated actor."
+  ],
+  "known_issues": [
+    "Backend state uses in-memory Map/Set and counters (no stable storage); data will be lost on canister upgrade/reinstall unless stable persistence is added.",
+    "Backend exposes a public shared initialize() that uses placeholder tokens; it appears redundant/confusing alongside _initializeAccessControlWithSecret and could be a security footgun if left enabled.",
+    "No backend endpoint returns per-goal linked investment details; frontend can only display total allocated amount (via analytics) and cannot list/unlink/update allocations in a “manage” view.",
+    "linkInvestmentToGoal does not validate allocation bounds (e.g., negative values, or allocating more than an investment’s value / multiple allocations exceeding totals).",
+    "Relinking the same (goalId, investmentId) pair may not update amountAllocated reliably because set uniqueness is based only on (goalId, investmentId) comparison, not amountAllocated.",
+    "unlinkInvestmentFromGoal traps when no links exist for a goal; a no-op/idempotent behavior may be preferable for UX.",
+    "There appear to be two global CSS entries shown (frontend/index.css and frontend/src/index.css) with different variable sets, which can cause confusion or unintended styling if both are included in the build."
+  ],
+  "isFixRequest": false,
+  "existing_features": [
+    {
+      "id": "IF-1",
+      "title": "Internet Identity authentication (login/logout)",
+      "synonyms": [
+        "II auth",
+        "DFINITY AuthClient integration"
+      ],
+      "description": "Provides an InternetIdentityProvider that initializes an AuthClient, loads persisted delegations, supports interactive login with Internet Identity, and logout/clear to remove identity and reset auth state.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-2",
+      "title": "Frontend actor creation bound to identity",
+      "synonyms": [
+        "Candid actor bootstrap",
+        "Authenticated actor"
+      ],
+      "description": "Creates an anonymous or identity-bound canister actor via createActorWithConfig, initializes backend access control using a secret token parameter, and forces React Query cache invalidation/refetch when the actor changes.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-3",
+      "title": "Role-based access control in backend",
+      "synonyms": [
+        "RBAC",
+        "admin/user/guest permissions"
+      ],
+      "description": "Motoko AccessControl assigns roles (first valid secret caller becomes admin, others become user), supports admin checks, role assignment, and permission gating for all protected endpoints.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-4",
+      "title": "User profile storage and onboarding",
+      "synonyms": [
+        "Profile setup",
+        "Caller profile"
+      ],
+      "description": "Allows authenticated users to fetch and save a simple UserProfile (name). The UI routes first-time users to a ProfileSetup form before showing the dashboard.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-5",
+      "title": "Financial goals CRUD",
+      "synonyms": [
+        "Goals management",
+        "Goal tracking"
+      ],
+      "description": "Users can create, list, update, and delete financial goals with name, target amount, target date, and time-horizon category (short/mid/long term). Frontend provides Add/Edit dialogs and deletion confirmation.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-6",
+      "title": "Investments CRUD with categorization",
+      "synonyms": [
+        "Portfolio entries",
+        "Investment tracking"
+      ],
+      "description": "Users can create, list, update, and delete investments with category and subcategory (variant), invested amount, current value, and date of investment. UI includes Add/Edit dialogs and deletion confirmation.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-7",
+      "title": "Goal ↔ Investment linking with allocation amounts",
+      "synonyms": [
+        "Allocation linking",
+        "Funding goals from investments"
+      ],
+      "description": "Backend supports linking an investment to a goal with an amountAllocated and unlinking by (goalId, investmentId). Frontend provides a dialog to link an investment to a selected goal.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-8",
+      "title": "Goal analytics computation",
+      "synonyms": [
+        "Goal progress analytics",
+        "Goal breakdown"
+      ],
+      "description": "Backend computes per-goal progress summaries (current allocated total, progress percentage capped at 100%), category breakdown (short/mid/long), overall average progress, and total target vs total linked amounts.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-9",
+      "title": "Investment analytics computation",
+      "synonyms": [
+        "Portfolio analytics",
+        "P&L summary"
+      ],
+      "description": "Backend computes investment analytics including total invested, current portfolio value, absolute gain/loss, and PnL percentage for the caller’s investments.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-10",
+      "title": "Combined financial dashboard endpoint",
+      "synonyms": [
+        "Dashboard API",
+        "Aggregated analytics"
+      ],
+      "description": "Backend exposes a getDashboard call that returns both goalsAnalytics and investmentsAnalytics for a unified frontend overview.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-11",
+      "title": "Dashboard UI with charts and summary cards",
+      "synonyms": [
+        "Analytics dashboard UI",
+        "Recharts visualizations"
+      ],
+      "description": "Frontend DashboardModule renders gradient summary cards and interactive Recharts visualizations (goal progress bar chart, goals-by-category pie chart, portfolio allocation pie chart, and performance metrics) with custom tooltips.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-12",
+      "title": "Responsive UI shell with tabs, theming, and notifications",
+      "synonyms": [
+        "shadcn-ui layout",
+        "dark mode",
+        "toasts"
+      ],
+      "description": "Implements a landing page, header/footer, tabbed navigation (Dashboard/Goals/Investments), light/dark theme toggle via next-themes, Tailwind styling, and toast feedback for successful/failed mutations (sonner).",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-13",
+      "title": "Dedicated connection/error UI states for auth/actor readiness and data loading",
+      "synonyms": [
+        "ConnectionErrorState",
+        "Actor readiness gating",
+        "Error boundary UI"
+      ],
+      "description": "Frontend introduces explicit readiness checks around Internet Identity + canister actor initialization and renders a dedicated connection/error state when initialization or data fetching fails, instead of silently failing or only throwing/toasting.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-the-application-ui-using-the-uploaded-design-spec-files-as-the-source-of-truth-for-layout-styling-and-visual-assets-updating-the-existing-screens-landing-page-dashboard-tab-goals-tab-investments-tab-profile-setup-header-footer-and-connection-error-state-to-match-the-uploaded-designs-while-keeping-current-functionality-intact",
+      "title": "Implement the application UI using the uploaded design/spec files as the source of truth for layout, styling, and visual assets, updating the existing screens (Landing page, Dashboard tab, Goals tab, Investments tab, Profile Setup, Header/Footer, and Connection Error state) to match the uploaded designs while keeping current functionality intact.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-incorporate-the-uploaded-static-assets-e-g-images-icons-referenced-by-the-uploaded-files-into-the-frontend-build-and-wire-them-into-the-updated-ui-ensuring-correct-paths-and-responsive-rendering",
+      "title": "Incorporate the uploaded static assets (e.g., images/icons referenced by the uploaded files) into the frontend build and wire them into the updated UI, ensuring correct paths and responsive rendering.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-apply-a-coherent-modern-visual-theme-consistent-with-the-uploaded-designs-colors-typography-scale-shadows-radii-and-spacing-across-all-updated-ui-surfaces-maintaining-accessibility-readable-contrast-focus-states-keyboard-navigability",
+      "title": "Apply a coherent, modern visual theme consistent with the uploaded designs (colors, typography scale, shadows, radii, and spacing) across all updated UI surfaces, maintaining accessibility (readable contrast, focus states, keyboard navigability).",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-the-frontend-is-wired-to-the-motoko-canister-defined-in-backend-main-mo-by-using-the-generated-canister-interface-for-all-calls-ensureinitialized-profile-goal-investment-crud-linking-analytics-dashboard-and-verifying-the-method-signatures-types-match-main-mo",
+      "title": "Ensure the frontend is wired to the Motoko canister defined in backend/main.mo by using the generated canister interface for all calls (ensureInitialized, profile/goal/investment CRUD, linking, analytics, dashboard) and verifying the method signatures/types match main.mo.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-use-the-access-control-initialization-flow-consistently-for-authenticated-users-on-login-create-an-identity-bound-actor-and-call-ensureinitialized-before-enabling-react-query-requests-mutations-so-callers-receive-the-user-role-automatically-and-unauthorized-traps-are-avoided-in-normal-usage",
+      "title": "Use the access-control initialization flow consistently for authenticated users: on login, create an identity-bound actor and call ensureInitialized() before enabling React Query requests/mutations, so callers receive the #user role automatically and unauthorized traps are avoided in normal usage.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-make-admin-access-control-secret-initialization-non-blocking-and-safe-when-missing-avoid-failing-actor-creation-initialization-when-the-url-parameter-caffeineadmintoken-is-absent-or-empty-and-standardize-on-the-resilient-behavior-across-actor-creation-hooks-used-by-the-app",
+      "title": "Make admin access-control secret initialization non-blocking and safe when missing: avoid failing actor creation/initialization when the URL parameter caffeineAdminToken is absent or empty, and standardize on the resilient behavior across actor-creation hooks used by the app.",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Create/build the frontend UI based on the uploaded design/spec files",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Wire the frontend to the Motoko canister defined in main.mo, including actor generation/binding and AccessControl initialization flow",
+      "reqIds": [],
+      "status": "pending"
+    }
+  ],
+  "gameProjectType": "none",
+  "projectName": "FinancePro",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

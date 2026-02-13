@@ -1,0 +1,64 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-ensure-the-frontend-is-wired-to-the-motoko-canister-defined-in-backend-main-mo-by-using-the-generated-canister-interface-for-all-calls-ensureinitialized-profile-goal-investment-crud-linking-analytics-dashboard-and-verifying-the-method-signatures-types-match-main-mo",
+      "featureTitle": "Ensure the frontend is wired to the Motoko canister defined in backend/main.mo by using the generated canister interface for all calls (ensureInitialized, profile/goal/investment CRUD, linking, analytics, dashboard) and verifying the method signatures/types match main.mo.",
+      "files": [
+        "frontend/src/hooks/useActorClient.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-use-the-access-control-initialization-flow-consistently-for-authenticated-users-on-login-create-an-identity-bound-actor-and-call-ensureinitialized-before-enabling-react-query-requests-mutations-so-callers-receive-the-user-role-automatically-and-unauthorized-traps-are-avoided-in-normal-usage",
+      "featureTitle": "Use the access-control initialization flow consistently for authenticated users: on login, create an identity-bound actor and call ensureInitialized() before enabling React Query requests/mutations, so callers receive the #user role automatically and unauthorized traps are avoided in normal usage.",
+      "files": [
+        "frontend/src/components/ConnectionErrorState.tsx",
+        "frontend/src/hooks/useActorReadiness.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-make-admin-access-control-secret-initialization-non-blocking-and-safe-when-missing-avoid-failing-actor-creation-initialization-when-the-url-parameter-caffeineadmintoken-is-absent-or-empty-and-standardize-on-the-resilient-behavior-across-actor-creation-hooks-used-by-the-app",
+      "featureTitle": "Make admin access-control secret initialization non-blocking and safe when missing: avoid failing actor creation/initialization when the URL parameter caffeineAdminToken is absent or empty, and standardize on the resilient behavior across actor-creation hooks used by the app.",
+      "files": [
+        "frontend/src/hooks/useActorClient.ts",
+        "frontend/src/utils/urlParams.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-6"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

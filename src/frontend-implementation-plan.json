@@ -1,0 +1,80 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Frontend wiring to generated Motoko canister interface with resilient access-control initialization",
+  "requirements": [
+    {
+      "id": "REQ-4",
+      "summary": "Standardize all UI backend calls to use the generated canister actor interface and ensure TypeScript signatures (including bigint for Nat/Time) align with backend/main.mo.",
+      "acceptanceCriteria": [
+        "Frontend builds successfully with no TypeScript errors related to the backend actor interface.",
+        "All backend calls used by the UI are invoked through the generated actor interface that matches backend/main.mo method names and parameter types (e.g., bigint for Nat/Time.Time).",
+        "Authenticated flows are able to fetch dashboard/goals/investments/analytics without “method not found” or type mismatch errors."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useActorClient.ts",
+          "operation": "modify",
+          "description": "Tighten actor typing so all calls flow through the generated canister interface (backendInterface from the generated frontend backend bindings), and locally extend the type only for optional internal methods used by access-control (e.g., _initializeAccessControlWithSecret) to avoid TypeScript “method not found” errors. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Audit all queries/mutations to ensure they exclusively call methods declared on the generated backend actor interface (dashboard, goals/investments CRUD, linking, analytics, profile) and that all Nat/Time arguments are passed as bigint. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/usePrefetchTabQueries.ts",
+          "operation": "modify",
+          "description": "Ensure all prefetch calls (dashboard/goals/analytics) use the same generated actor instance from readiness gating, and do not invoke any backend calls unless the actor is confirmed ready/initialized. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Ensure authenticated access-control initialization is performed on login by calling ensureInitialized() before enabling React Query calls, with a robust retry path that re-creates/re-initializes the actor and reuses the existing ConnectionErrorState UI.",
+      "acceptanceCriteria": [
+        "After a successful Internet Identity login, the app performs backend initialization by calling ensureInitialized() before enabling queries that require #user permission (e.g., getCallerUserProfile, getDashboard).",
+        "If initialization fails (replica error, canister stopped, timeout), the app shows the existing ConnectionErrorState with a working Retry action.",
+        "After pressing Retry, the app re-attempts actor creation/initialization and transitions to the normal authenticated UI when successful."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useActorReadiness.ts",
+          "operation": "modify",
+          "description": "Make ensureInitialized() the single initialization gate for authenticated users: keep initialization cached per-identity, but fix the Retry flow to use the actor returned from refetch() (rather than a potentially stale closure value) so it reliably re-creates the identity-bound actor and calls ensureInitialized() before marking readiness as 'ready'. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Keep the authenticated rendering flow strictly gated by actor readiness (initialized state) so React Query hooks don’t run until ensureInitialized() has succeeded; continue to surface initialization failures via the existing ConnectionErrorState Retry wiring. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/ConnectionErrorState.tsx",
+          "operation": "modify",
+          "description": "Confirm the Retry button remains compatible with an async retry flow (actor re-creation + ensureInitialized) and that the UI remains responsive during retries (disable button / show loading) without changing shadcn/ui source components. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "summary": "Make admin secret initialization resilient and non-blocking when missing/invalid, and standardize the behavior across actor-creation hooks used by the app so normal user login never fails due to admin token handling.",
+      "acceptanceCriteria": [
+        "When caffeineAdminToken is not present (or is an empty/whitespace string), actor creation and ensureInitialized() still succeed for normal users.",
+        "If caffeineAdminToken is present but invalid, the app still loads normally for non-admin functionality (errors are logged or surfaced non-fatally).",
+        "There is no code path in the app that calls _initializeAccessControlWithSecret with an empty string in a way that can break normal login/app usage."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useActorClient.ts",
+          "operation": "modify",
+          "description": "Standardize admin token handling: treat caffeineAdminToken as optional, trim whitespace, and only attempt admin secret initialization when non-empty; wrap the call so failures are logged non-fatally and never prevent returning the authenticated actor. (Authorization component governs role-based access control expectations.) Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/utils/urlParams.ts",
+          "operation": "modify",
+          "description": "Harden secret parameter retrieval semantics used for caffeineAdminToken: ensure helpers never coerce missing values into empty strings, and document/encode the expected behavior (null when absent, caller trims/validates). Verify the component's usage instructions before implementing."
+        }
+      ]
+    }
+  ]
+}

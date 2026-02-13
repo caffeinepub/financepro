@@ -1,0 +1,86 @@
+{
+  "kind": "build_request",
+  "title": "Wire React frontend to Motoko main.mo canister with access control initialization",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-4",
+      "text": "Ensure the frontend is wired to the Motoko canister defined in backend/main.mo by using the generated canister interface for all calls (ensureInitialized, profile/goal/investment CRUD, linking, analytics, dashboard) and verifying the method signatures/types match main.mo.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-3"
+        ],
+        "quotes": [
+          "Using main.mo and access control, Build my front end linking main.mo"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Frontend builds successfully with no TypeScript errors related to the backend actor interface.",
+        "All backend calls used by the UI are invoked through the generated actor interface that matches backend/main.mo method names and parameter types (e.g., bigint for Nat/Time.Time).",
+        "Authenticated flows are able to fetch dashboard/goals/investments/analytics without “method not found” or type mismatch errors."
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Use the access-control initialization flow consistently for authenticated users: on login, create an identity-bound actor and call ensureInitialized() before enabling React Query requests/mutations, so callers receive the #user role automatically and unauthorized traps are avoided in normal usage.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-3"
+        ],
+        "quotes": [
+          "Using main.mo and access control, Build my front end linking main.mo"
+        ]
+      },
+      "acceptanceCriteria": [
+        "After a successful Internet Identity login, the app performs backend initialization by calling ensureInitialized() before enabling queries that require #user permission (e.g., getCallerUserProfile, getDashboard).",
+        "If initialization fails (replica error, canister stopped, timeout), the app shows the existing ConnectionErrorState with a working Retry action.",
+        "After pressing Retry, the app re-attempts actor creation/initialization and transitions to the normal authenticated UI when successful."
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "text": "Make admin access-control secret initialization non-blocking and safe when missing: avoid failing actor creation/initialization when the URL parameter caffeineAdminToken is absent or empty, and standardize on the resilient behavior across actor-creation hooks used by the app.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-3"
+        ],
+        "quotes": [
+          "Using main.mo and access control, Build my front end linking main.mo"
+        ]
+      },
+      "acceptanceCriteria": [
+        "When caffeineAdminToken is not present (or is an empty/whitespace string), actor creation and ensureInitialized() still succeed for normal users.",
+        "If caffeineAdminToken is present but invalid, the app still loads normally for non-admin functionality (errors are logged or surfaced non-fatally).",
+        "There is no code path in the app that calls _initializeAccessControlWithSecret with an empty string in a way that can break normal login/app usage."
+      ]
+    }
+  ],
+  "constraints": [
+    "Backend must remain a single-actor Motoko canister with logic in backend/main.mo (no additional backend services).",
+    "Do not edit files under frontend/src/components/ui (shadcn UI sources are read-only); compose them instead.",
+    "Do not edit immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx.",
+    "Use English for any user-facing text."
+  ],
+  "nonGoals": [
+    "Adding new product features beyond wiring/auth/access-control initialization (e.g., new goal allocation management screens, new analytics types).",
+    "Changing backend schema, adding stable persistence, or performing canister state migrations (unless separately requested).",
+    "Introducing third-party authentication providers (only Internet Identity is in scope)."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
+  }
+}
